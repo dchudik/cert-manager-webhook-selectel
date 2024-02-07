@@ -38,10 +38,10 @@ type Config struct {
 }
 
 type CredentialsForDNS struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	AccountID string `json:"account_id"`
-	ProjectID string `json:"project_id"`
+	Username  string `json:"-"`
+	Password  string `json:"-"`
+	AccountID string `json:"-"`
+	ProjectID string `json:"-"`
 }
 
 func (credentials *CredentialsForDNS) FromMapBytes(dataFromSecret map[string][]byte) error {
@@ -92,7 +92,7 @@ type DNSProvider struct {
 	dnsClient domainsV2.DNSClient[domainsV2.Zone, domainsV2.RRSet]
 }
 
-// NewDNSProviderConfig return a DNSProvider instance configured for selectel.
+// NewDNSProviderFromConfig return a DNSProvider instance configured for selectel.
 func NewDNSProviderFromConfig(config *Config) (*DNSProvider, error) {
 	if config == nil {
 		return nil, errConfigAbsent
@@ -112,7 +112,7 @@ func NewDNSProviderFromConfig(config *Config) (*DNSProvider, error) {
 	}, nil
 }
 
-// Present creates a TXT rrset to fulfill DNS-01 challenge.
+// Present creates a recor in TXT RRSet to fulfill DNS-01 challenge.
 func (d *DNSProvider) Present(zoneName, fqdn, value string) error {
 	ctx := context.Background()
 	zone, err := internal.GetZoneByName(ctx, d.dnsClient, zoneName)
@@ -123,7 +123,10 @@ func (d *DNSProvider) Present(zoneName, fqdn, value string) error {
 	if err != nil && !errors.Is(err, internal.ErrRrsetNotFound) {
 		return fmt.Errorf("get rrset by name: %w", err)
 	}
+	// Escaping quotes in TXT record
 	content := fmt.Sprintf("\"%s\"", value)
+	// Create RRSet if not exists
+	// else added one record to existing RRSet
 	if errors.Is(err, internal.ErrRrsetNotFound) {
 		createRrsetOpts := &domainsV2.RRSet{
 			Name: fqdn,
@@ -156,7 +159,7 @@ func (d *DNSProvider) Present(zoneName, fqdn, value string) error {
 	return nil
 }
 
-// CleanUp removes a content from TXT rrset used for DNS-01 challenge.
+// CleanUp removes a record from TXT RRSet used for DNS-01 challenge.
 func (d *DNSProvider) CleanUp(zoneName, fqdn, value string) error {
 	ctx := context.Background()
 	zone, err := internal.GetZoneByName(ctx, d.dnsClient, zoneName)
@@ -167,6 +170,8 @@ func (d *DNSProvider) CleanUp(zoneName, fqdn, value string) error {
 	if err != nil {
 		return fmt.Errorf("get rrset by name and type: %w", err)
 	}
+	// if RRSet has one records delete rrset
+	// else remove one record from RRSet
 	if len(rrset.Records) == 1 {
 		err = d.dnsClient.DeleteRRSet(ctx, zone.ID, rrset.ID)
 		if err != nil {
@@ -175,7 +180,9 @@ func (d *DNSProvider) CleanUp(zoneName, fqdn, value string) error {
 	} else {
 		newRecords := []domainsV2.RecordItem{}
 		for i := range rrset.Records {
-			if rrset.Records[i].Content != fmt.Sprintf("\"%s\"", value) {
+			// Escaping quotes in TXT record
+			content := fmt.Sprintf("\"%s\"", value)
+			if rrset.Records[i].Content != content {
 				newRecords = append(newRecords, rrset.Records[i])
 			}
 		}

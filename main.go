@@ -57,14 +57,14 @@ type selectelDNSProviderSolver struct {
 // selectelDNSProviderConfig is a structure that is used to decode into when
 // solving a DNS01 challenge.
 type selectelDNSProviderConfig struct {
-	Secret coreV1.SecretReference `json:"dnsSecretRef"`
-	selectel.Config
+	DNSSecretRef coreV1.SecretReference `json:"dnsSecretRef"`
+	*selectel.Config
 }
 
 var ErrSecretForAuthNotSetup = errors.New("secret name not setup")
 
 func (c *selectelDNSProviderSolver) validate(cfg *selectelDNSProviderConfig) error {
-	if cfg.Secret.Name == "" {
+	if cfg.DNSSecretRef.Name == "" {
 		return ErrSecretForAuthNotSetup
 	}
 
@@ -77,7 +77,7 @@ func (c *selectelDNSProviderSolver) provider(cfg *selectelDNSProviderConfig, nam
 	}
 	sec, err := c.client.CoreV1().
 		Secrets(namespace).
-		Get(context.Background(), cfg.Secret.Name, metaV1.GetOptions{})
+		Get(context.Background(), cfg.DNSSecretRef.Name, metaV1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("getting secret from k8s: %w", err)
 	}
@@ -85,7 +85,7 @@ func (c *selectelDNSProviderSolver) provider(cfg *selectelDNSProviderConfig, nam
 	if err != nil {
 		return nil, fmt.Errorf("setup credentials from secret: %w", err)
 	}
-	dnsProvider, err := selectel.NewDNSProviderFromConfig(&cfg.Config)
+	dnsProvider, err := selectel.NewDNSProviderFromConfig(cfg.Config)
 	if err != nil {
 		return nil, fmt.Errorf("setup dns provider: %w", err)
 	}
@@ -170,7 +170,7 @@ func loadConfig(cfgJSON *extAPI.JSON) (selectelDNSProviderConfig, error) {
 	if err != nil {
 		return cfg, fmt.Errorf("setup selectel config: %w", err)
 	}
-	cfg.Config = *cfgDNS
+	cfg.Config = cfgDNS
 	// handle the 'base case' where no configuration has been provided
 	if cfgJSON == nil {
 		return cfg, nil

@@ -10,7 +10,6 @@ linters:
     - wsl
     - depguard
     - testpackage
-    - tagliatelle
     - exhaustruct
     # Disbale deprecated linters
     - interfacer
@@ -23,3 +22,10 @@ linters:
     - golint
     - varcheck
     - exhaustivestruct
+
+linters-settings:
+  tagliatelle:
+    case:
+      use-field-name: true
+      rules:
+        json: camel
