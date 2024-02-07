@@ -1,7 +1,10 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: selectel-api-token
+  name: selectel-dns-credentials
 type: Opaque
 stringData:
-  token: APITOKEN_FROM_MY_SELECTEL_RU
+  username: KEYSTONE_USER
+  password: KEYSTONE_PASSWORD
+  account_id: ACCOUNT_ID
+  project_id: SELECTEL_PROJECT_ID
