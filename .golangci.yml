@@ -8,3 +8,25 @@ linters:
     - gosec
     - lll
     - wsl
+    - depguard
+    - testpackage
+    - tagliatelle
+    - exhaustruct
+    # Disbale deprecated linters
+    - interfacer
+    - ifshort
+    - structcheck
+    - maligned
+    - scopelint 
+    - deadcode
+    - nosnakecase
+    - golint
+    - varcheck
+    - exhaustivestruct
+
+linters-settings:
+  tagliatelle:
+    case:
+      use-field-name: true
+      rules:
+        json: camel
