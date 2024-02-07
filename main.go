@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -61,7 +60,7 @@ type selectelDNSProviderConfig struct {
 	*selectel.Config
 }
 
-var ErrSecretForAuthNotSetup = errors.New("secret name not setup")
+var ErrSecretForAuthNotSetup = fmt.Errorf("secret name not setup")
 
 func (c *selectelDNSProviderSolver) validate(cfg *selectelDNSProviderConfig) error {
 	if cfg.DNSSecretRef.Name == "" {
@@ -83,7 +82,7 @@ func (c *selectelDNSProviderSolver) provider(cfg *selectelDNSProviderConfig, nam
 	}
 	err = cfg.CredentialsForDNS.FromMapBytes(sec.Data)
 	if err != nil {
-		return nil, fmt.Errorf("setup credentials from secret: %w", err)
+		return nil, fmt.Errorf("setup credentials from secret. %w", err)
 	}
 	dnsProvider, err := selectel.NewDNSProviderFromConfig(cfg.Config)
 	if err != nil {

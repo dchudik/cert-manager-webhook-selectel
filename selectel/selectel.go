@@ -48,19 +48,19 @@ func (credentials *CredentialsForDNS) FromMapBytes(dataFromSecret map[string][]b
 	var err error
 	credentials.Username, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "username")
 	if err != nil {
-		return err
+		return fmt.Errorf("username: %w", err)
 	}
 	credentials.Password, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "password")
 	if err != nil {
-		return err
+		return fmt.Errorf("password: %w", err)
 	}
 	credentials.AccountID, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "account_id")
 	if err != nil {
-		return err
+		return fmt.Errorf("account_id: %w", err)
 	}
 	credentials.ProjectID, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "project_id")
 	if err != nil {
-		return err
+		return fmt.Errorf("project_id: %w", err)
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -10,7 +9,7 @@ import (
 	domainsV2 "github.com/selectel/domains-go/pkg/v2"
 )
 
-var ErrRrsetNotFound = errors.New("rrset not found")
+var ErrRrsetNotFound = fmt.Errorf("rrset not found")
 
 func GetRrsetByNameAndType(ctx context.Context, client domainsV2.DNSClient[domainsV2.Zone, domainsV2.RRSet], zoneID, rrsetName, rrsetType string) (*domainsV2.RRSet, error) {
 	optsForSearchRrset := map[string]string{
