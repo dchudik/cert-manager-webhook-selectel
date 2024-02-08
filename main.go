@@ -25,8 +25,8 @@ const (
 	groupNameEnvVar = "GROUP_NAME"
 )
 
-// use a single instance of Validate, it caches struct info.
 var (
+	// use a single instance of Validate, it caches struct info.
 	validate              *validator.Validate = validator.New(validator.WithRequiredStructEnabled())
 	errSecretNameNotSetup                     = fmt.Errorf("secret name not setup")
 	errConvertToValidator                     = fmt.Errorf("convert to validator")
