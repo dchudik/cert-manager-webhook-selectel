@@ -1,53 +1,26 @@
 package selectel
 
-// import (
-// 	"fmt"
-// 	"os"
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestNewDNSProvider(t *testing.T) {
-// 	testToken := "123"
+func TestNewConfigForDNS_setupDefaultValues(t *testing.T) {
+	cfg, err := NewConfigForDNS()
+	assert.NoError(t, err)
 
-// 	assert.NoError(t, os.Setenv(apiTokenEnvVar, testToken))
-// 	defer os.Unsetenv(apiTokenEnvVar)
+	assert.Equal(t, cfg.BaseURL, defaultBaseURL)
+	assert.Equal(t, cfg.HTTPTimeout, defaultHTTPTimeout)
+	assert.Equal(t, cfg.TTL, minTTL)
+}
 
-// 	p, err := NewDNSProvider()
-// 	assert.NoError(t, err)
-// 	assert.NotNil(t, p.config)
-// 	assert.NotNil(t, p.dnsV2Client)
-// 	assert.Equal(t, p.config.Token, testToken)
-// }
+func TestNewDNSProviderConfig_BadTTL(t *testing.T) {
+	testTTL := 59
+	config, err := NewConfigForDNS()
+	assert.NoError(t, err)
+	config.TTL = testTTL
 
-// func TestNewDNSProvider_NoAPIKey(t *testing.T) {
-// 	assert.NoError(t, os.Setenv(apiTokenEnvVar, ""))
-// 	defer os.Unsetenv(apiTokenEnvVar)
-
-// 	_, err := NewDNSProvider()
-// 	if assert.Error(t, err) {
-// 		assert.EqualError(t, err, fmt.Sprintf("selectel: %s is missing", apiTokenEnvVar))
-// 	}
-// }
-
-// func TestNewDNSProviderConfig_NoConfig(t *testing.T) {
-// 	_, err := NewDNSProviderConfig(nil)
-// 	if assert.Error(t, err) {
-// 		assert.EqualError(t, err, fmt.Sprintf("selectel: %s", errConfigAbsent))
-// 	}
-// }
-
-// func TestNewDNSProviderConfig_BadTTL(t *testing.T) {
-// 	testTTL := 59
-// 	testAPIKey := "123"
-// 	config := NewDefaultConfig()
-// 	config.TTL = testTTL
-// 	config.Token = testAPIKey
-
-// 	_, err := NewDNSProviderConfig(config)
-// 	if assert.Error(t, err) {
-// 		assert.EqualError(t, err,
-// 			fmt.Sprintf("selectel: invalid TTL, TTL (%d) must be greater than %d", testTTL, minTTL))
-// 	}
-// }
+	_, err = NewDNSProviderFromConfig(config)
+	assert.ErrorIs(t, err, errTTLMustBeGreaterOrEqualsMinTTL)
+}

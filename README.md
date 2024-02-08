@@ -179,7 +179,6 @@ You can run the test suite with:
 2. Fill in the appropriate values in `testdata/selectel/dns-credentials.yml` and `testdata/selectel/config.json`.
     - Insert values `testdata/selectel/dns-credentials.yml`.
     - Check that `metadata.name` in `testdata/selectel/dns-credentials.yml` equals value in `testdata/selectel/config.json` for key `dnsSecretRef.name`.
-    - Check that key name in `testdata/selectel/dns-credentials.yml` equals value in `testdata/selectel/config.json` for key `dnsSecretRef.key`.
 
 ```bash
 $ TEST_ZONE_NAME=example.com. make test
