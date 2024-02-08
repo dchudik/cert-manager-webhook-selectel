@@ -119,9 +119,9 @@ func (c *selectelDNSProviderSolver) Present(challengeRequest *v1alpha1.Challenge
 	return nil
 }
 
-// CleanUp should delete the relevant TXT record from the DNS provider console.
-// If multiple TXT records exist with the same record name (e.g.
-// _acme-challenge.example.com) then **only** the record with the same `key`
+// CleanUp should delete the relevant TXT record in RRSet from the DNS provider console.
+// If multiple TXT records exist in RRSet with the same record hostname (e.g.
+// _acme-challenge.example.com) then **only** the one record with the same `key`
 // value provided on the ChallengeRequest should be cleaned up.
 // This is in order to facilitate multiple DNS validations for the same domain
 // concurrently.
@@ -175,7 +175,7 @@ func loadConfig(cfgJSON *extAPI.JSON) (selectelDNSProviderConfig, error) {
 		return cfg, nil
 	}
 	if err := json.Unmarshal(cfgJSON.Raw, &cfg); err != nil {
-		return cfg, fmt.Errorf("error decoding solver config: %w", err)
+		return cfg, fmt.Errorf("unmarshal config: %w", err)
 	}
 
 	return cfg, nil
