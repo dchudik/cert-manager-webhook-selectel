@@ -8,7 +8,9 @@ import (
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
+	"github.com/go-playground/validator/v10"
 	"github.com/selectel/cert-manager-webhook-selectel/selectel"
+	"github.com/selectel/cert-manager-webhook-selectel/utils"
 	coreV1 "k8s.io/api/core/v1"
 	extAPI "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,18 +25,18 @@ const (
 	groupNameEnvVar = "GROUP_NAME"
 )
 
+// use a single instance of Validate, it caches struct info.
+var (
+	validate              *validator.Validate = validator.New(validator.WithRequiredStructEnabled())
+	errSecretNameNotSetup                     = fmt.Errorf("secret name not setup")
+	errConvertToValidator                     = fmt.Errorf("convert to validator")
+)
+
 func main() {
 	groupName := os.Getenv("GROUP_NAME")
 	if groupName == "" {
 		panic(fmt.Sprintf("%s must be specified", groupNameEnvVar))
 	}
-
-	// We must setup logger
-	// https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/log#pkg-variables
-	// example from https://sdk.operatorframework.io/docs/building-operators/golang/references/logging/
-	logger := zap.New()
-	logf.SetLogger(logger)
-
 	// This will register our custom DNS provider with the webhook serving
 	// library, making it available as an API under the provided groupName.
 	// You can register multiple DNS provider implementations with a single
@@ -56,24 +58,12 @@ type selectelDNSProviderSolver struct {
 // selectelDNSProviderConfig is a structure that is used to decode into when
 // solving a DNS01 challenge.
 type selectelDNSProviderConfig struct {
-	DNSSecretRef coreV1.SecretReference `json:"dnsSecretRef"`
+	DNSSecretRef coreV1.SecretReference `json:"dnsSecretRef" validate:"required"`
 	*selectel.Config
 }
 
-var ErrSecretForAuthNotSetup = fmt.Errorf("secret name not setup")
-
-func (c *selectelDNSProviderSolver) validate(cfg *selectelDNSProviderConfig) error {
-	if cfg.DNSSecretRef.Name == "" {
-		return ErrSecretForAuthNotSetup
-	}
-
-	return nil
-}
-
 func (c *selectelDNSProviderSolver) provider(cfg *selectelDNSProviderConfig, namespace string) (*selectel.DNSProvider, error) {
-	if err := c.validate(cfg); err != nil {
-		return nil, err
-	}
+	// setup credentials from secret
 	sec, err := c.client.CoreV1().
 		Secrets(namespace).
 		Get(context.Background(), cfg.DNSSecretRef.Name, metaV1.GetOptions{})
@@ -84,6 +74,19 @@ func (c *selectelDNSProviderSolver) provider(cfg *selectelDNSProviderConfig, nam
 	if err != nil {
 		return nil, fmt.Errorf("setup credentials from secret. %w", err)
 	}
+	// validate credentials
+	err = validate.Struct(cfg.CredentialsForDNS)
+	if err != nil {
+		//nolint: errorlint
+		validationErrors, ok := err.(validator.ValidationErrors)
+		if !ok {
+			return nil, errConvertToValidator
+		}
+		if err = utils.BuildErrFromValidator(validationErrors); err != nil {
+			return nil, fmt.Errorf("validate credentials: %w", err)
+		}
+	}
+
 	dnsProvider, err := selectel.NewDNSProviderFromConfig(cfg.Config)
 	if err != nil {
 		return nil, fmt.Errorf("setup dns provider: %w", err)
@@ -152,6 +155,14 @@ func (c *selectelDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.Challenge
 // The stopCh can be used to handle early termination of the webhook, in cases
 // where a SIGTERM or similar signal is sent to the webhook process.
 func (c *selectelDNSProviderSolver) Initialize(kubeClientCfg *rest.Config, _ <-chan struct{}) error {
+	// use name in json tag as field name for validate output errors
+	validate.RegisterTagNameFunc(utils.JSONFieldNameForValidator)
+	// We must setup logger
+	// https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/log#pkg-variables
+	// example from https://sdk.operatorframework.io/docs/building-operators/golang/references/logging/
+	logger := zap.New()
+	logf.SetLogger(logger)
+
 	cl, err := kubernetes.NewForConfig(kubeClientCfg)
 	if err != nil {
 		return fmt.Errorf("k8s clientset: %w", err)
@@ -170,12 +181,11 @@ func loadConfig(cfgJSON *extAPI.JSON) (selectelDNSProviderConfig, error) {
 		return cfg, fmt.Errorf("setup selectel config: %w", err)
 	}
 	cfg.Config = cfgDNS
-	// handle the 'base case' where no configuration has been provided
-	if cfgJSON == nil {
-		return cfg, nil
-	}
 	if err := json.Unmarshal(cfgJSON.Raw, &cfg); err != nil {
 		return cfg, fmt.Errorf("unmarshal config: %w", err)
+	}
+	if cfg.DNSSecretRef.Name == "" {
+		return cfg, errSecretNameNotSetup
 	}
 
 	return cfg, nil

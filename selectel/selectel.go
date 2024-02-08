@@ -4,6 +4,7 @@ package selectel
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -23,56 +24,34 @@ const (
 	headerForOSProjectToken = "X-Auth-Token"
 )
 
-var (
-	errTTLMustBeGreaterOrEqualsMinTTL = fmt.Errorf("ttl must be greater or equals min ttl: %d", minTTL)
-	errConfigAbsent                   = fmt.Errorf("the configuration of the DNS provider is absent")
-	errKeyNotFoundInSecret            = fmt.Errorf("key not found in secret")
-)
+var errTTLMustBeGreaterOrEqualsMinTTL = fmt.Errorf("ttl must be greater or equals min ttl: %d", minTTL)
 
 // Config is used to configure the creation of the DNSProvider.
 type Config struct {
-	BaseURL           string            `json:"baseUrl"`
-	TTL               int               `json:"ttl"`
-	HTTPTimeout       int               `json:"httpTimeout"`
+	BaseURL           string            `json:"baseUrl"     validate:"required,gt=0"`
+	TTL               int               `json:"ttl"         validate:"required"`
+	HTTPTimeout       int               `json:"httpTimeout" validate:"required"`
 	CredentialsForDNS CredentialsForDNS `json:"-"`
 }
 
 type CredentialsForDNS struct {
-	Username  string `json:"-"`
-	Password  string `json:"-"`
-	AccountID string `json:"-"`
-	ProjectID string `json:"-"`
+	Username  []byte `json:"username"   validate:"required,gt=0"`
+	Password  []byte `json:"password"   validate:"required,gt=0"`
+	AccountID []byte `json:"account_id" validate:"required,gt=0"`
+	ProjectID []byte `json:"project_id" validate:"required,gt=0"`
 }
 
 func (credentials *CredentialsForDNS) FromMapBytes(dataFromSecret map[string][]byte) error {
-	var err error
-	credentials.Username, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "username")
+	b, err := json.Marshal(dataFromSecret)
 	if err != nil {
-		return fmt.Errorf("username: %w", err)
+		return fmt.Errorf("marshal secret data: %w", err)
 	}
-	credentials.Password, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "password")
+	err = json.Unmarshal(b, credentials)
 	if err != nil {
-		return fmt.Errorf("password: %w", err)
-	}
-	credentials.AccountID, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "account_id")
-	if err != nil {
-		return fmt.Errorf("account_id: %w", err)
-	}
-	credentials.ProjectID, err = getValueFromMapIfIsNotEmpty(dataFromSecret, "project_id")
-	if err != nil {
-		return fmt.Errorf("project_id: %w", err)
+		return fmt.Errorf("parse credentials: %w", err)
 	}
 
 	return nil
-}
-
-func getValueFromMapIfIsNotEmpty(dataFromSecret map[string][]byte, key string) (string, error) {
-	value, ok := dataFromSecret[key]
-	if !ok && len(value) == 0 {
-		return "", errKeyNotFoundInSecret
-	}
-
-	return string(value), nil
 }
 
 // NewDefaultConfig returns a default configuration for the DNSProvider.
@@ -94,9 +73,6 @@ type DNSProvider struct {
 
 // NewDNSProviderFromConfig return a DNSProvider instance configured for selectel.
 func NewDNSProviderFromConfig(config *Config) (*DNSProvider, error) {
-	if config == nil {
-		return nil, errConfigAbsent
-	}
 	if config.TTL < minTTL {
 		return nil, errTTLMustBeGreaterOrEqualsMinTTL
 	}
@@ -202,10 +178,10 @@ func getDNSClientFromConfig(config *Config) (domainsV2.DNSClient[domainsV2.Zone,
 	ctx := context.Background()
 	options := &selvpcclient.ClientOptions{
 		Context:    ctx,
-		DomainName: config.CredentialsForDNS.AccountID,
-		Username:   config.CredentialsForDNS.Username,
-		Password:   config.CredentialsForDNS.Password,
-		ProjectID:  config.CredentialsForDNS.ProjectID,
+		DomainName: string(config.CredentialsForDNS.AccountID),
+		Username:   string(config.CredentialsForDNS.Username),
+		Password:   string(config.CredentialsForDNS.Password),
+		ProjectID:  string(config.CredentialsForDNS.ProjectID),
 	}
 
 	client, err := selvpcclient.NewClient(options)

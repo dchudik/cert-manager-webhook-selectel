@@ -7,6 +7,7 @@ import (
 )
 
 func TestNewConfigForDNS_setupDefaultValues(t *testing.T) {
+	t.Parallel()
 	cfg, err := NewConfigForDNS()
 	assert.NoError(t, err)
 
@@ -16,6 +17,7 @@ func TestNewConfigForDNS_setupDefaultValues(t *testing.T) {
 }
 
 func TestNewDNSProviderConfig_BadTTL(t *testing.T) {
+	t.Parallel()
 	testTTL := 59
 	config, err := NewConfigForDNS()
 	assert.NoError(t, err)

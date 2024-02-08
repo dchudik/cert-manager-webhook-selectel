@@ -11,6 +11,7 @@ linters:
     - depguard
     - testpackage
     - exhaustruct
+    - tagliatelle
     # Disbale deprecated linters
     - interfacer
     - ifshort
@@ -22,10 +23,3 @@ linters:
     - golint
     - varcheck
     - exhaustivestruct
-
-linters-settings:
-  tagliatelle:
-    case:
-      use-field-name: true
-      rules:
-        json: camel
