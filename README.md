@@ -175,10 +175,11 @@ spec:
 
 You can run the test suite with:
 
-1. Go to `https://my.selectel.ru/profile/users_management/users`, get one or create new user.
-2. Fill in the appropriate values in `testdata/selectel/dns-credentials.yml` and `testdata/selectel/config.json`.
-    - Insert values `testdata/selectel/dns-credentials.yml`.
-    - Check that `metadata.name` in `testdata/selectel/dns-credentials.yml` equals value in `testdata/selectel/config.json` for key `dnsSecretRef.name`.
+1. Go to `https://my.selectel.ru/profile/apikeys`, get one or create new api token.
+2. Fill in the appropriate values in `testdata/selectel/apikey.yml` and `testdata/selectel/config.json`.
+    - Insert token `testdata/selectel/apikey.yml`.
+    - Check that `metadata.name` in `testdata/selectel/apikey.yml` equals value in `testdata/selectel/config.json` for key `apiKeySecretRef.name`.
+    - Check that key name in `testdata/selectel/apikey.yml` equals value in `testdata/selectel/config.json` for key `apiKeySecretRef.key`.
 
 ```bash
 $ TEST_ZONE_NAME=example.com. make test
