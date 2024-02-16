@@ -102,7 +102,7 @@ $ helm install cert-manager-webhook-selectel selectel/cert-manager-webhook-selec
 OR
 
 ```bash
-$ git clone https://github.com/selectel/cert-manager-webhook-selectel.git --branch 1.2.5
+$ git clone https://github.com/selectel/cert-manager-webhook-selectel.git --branch cert-manager-webhook-selectel-1.2.5
 $ cd cert-manager-webhook-selectel/deploy/cert-manager-webhook-selectel
 $ helm install cert-manager-webhook-selectel . -n cert-manager
 ```
