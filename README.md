@@ -57,11 +57,7 @@ spec:
           solverName: selectel
           config:
             dnsSecretRef:
-<<<<<<< HEAD
               name: selectel-dns-credentials
-=======
-              name: selectel-api-key
->>>>>>> master
             # Optional config, shown with default values
             #   all times in seconds
             ttl: 120 # Default: 60
