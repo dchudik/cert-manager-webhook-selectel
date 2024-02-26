@@ -42,7 +42,7 @@ $ helm install cert-manager-webhook-selectel . -n cert-manager
 
 ### Setup credentials
 
-Create secret and fill authentificate data.
+Create secret and fill authentication data.
 
 ```yaml
 apiVersion: v1
