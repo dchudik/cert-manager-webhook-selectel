@@ -2,8 +2,6 @@ module github.com/selectel/cert-manager-webhook-selectel
 
 go 1.21
 
-toolchain go1.22.6
-
 require (
 	github.com/cert-manager/cert-manager v1.14.1
 	github.com/go-playground/validator/v10 v10.17.0
