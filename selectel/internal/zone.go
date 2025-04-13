@@ -2,16 +2,16 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 
-	"golang.org/x/net/idna"
-
 	domainsV2 "github.com/selectel/domains-go/pkg/v2"
+	"golang.org/x/net/idna"
 )
 
-var ErrZoneNotFound = fmt.Errorf("zone not found")
+var ErrZoneNotFound = errors.New("zone not found")
 
 func GetZoneByName(ctx context.Context, client domainsV2.DNSClient[domainsV2.Zone, domainsV2.RRSet], zoneName string) (*domainsV2.Zone, error) {
 	zoneNameUnicode, err := idna.ToUnicode(zoneName)

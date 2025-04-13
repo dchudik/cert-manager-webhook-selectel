@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"golang.org/x/net/idna"
 )
 
-var ErrRrsetNotFound = fmt.Errorf("rrset not found")
+var ErrRrsetNotFound = errors.New("rrset not found")
 
 func GetRrsetByNameAndType(ctx context.Context, client domainsV2.DNSClient[domainsV2.Zone, domainsV2.RRSet], zoneID, rrsetName, rrsetType string) (*domainsV2.RRSet, error) {
 	rrsetNameUnicode, err := idna.ToUnicode(rrsetName)
